@@ -1,6 +1,6 @@
 mod api;
 
-use crate::api::register_good;
+use crate::api::{allocate_bin, register_good};
 use axum::Router;
 use axum::routing::{get, post};
 use migration::{Migrator, MigratorTrait};
@@ -43,7 +43,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let state = AppState { db };
 
-    let api_routes = Router::new().route("/register_good", post(register_good));
+    let api_routes = Router::new()
+        .route("/register_good", post(register_good))
+        .route("/allocate_bin", post(allocate_bin));
 
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
