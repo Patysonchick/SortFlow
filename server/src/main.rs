@@ -1,5 +1,8 @@
+mod api;
+
+use crate::api::register_good;
 use axum::Router;
-use axum::routing::get;
+use axum::routing::{get, post};
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{Database, DatabaseConnection};
 use std::env;
@@ -39,9 +42,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing::info!("Migrations applied successfully!");
 
     let state = AppState { db };
+
+    let api_routes = Router::new().route("/register_good", post(register_good));
+
     let app = Router::new()
-        .with_state(state)
-        .route("/", get(|| async { "Hello, World!" }));
+        .route("/", get(|| async { "Hello, World!" }))
+        .nest("/api", api_routes)
+        .with_state(state);
 
     // TODO! сообщение о начале прослушивания на порте
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;

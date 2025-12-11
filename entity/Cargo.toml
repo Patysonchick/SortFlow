@@ -1,0 +1,14 @@
+[package]
+name = "entity"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+sea-orm = { version = "2.0.0-rc.20", features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+    "macros",
+    "with-uuid",
+    "with-chrono",
+    "debug-print",
+] }
