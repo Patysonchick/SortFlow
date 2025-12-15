@@ -5,6 +5,8 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 use serde_json::json;
 use uuid::Uuid;
 
+// TODO! реализовать здесь, на этом месте функцию, возвращающую Router::new().route(...)... для функций по пути /api/bin/{функция}
+
 pub(crate) async fn allocate(
     State(state): State<AppState>,
     Json(payload): Json<serde_json::Value>,

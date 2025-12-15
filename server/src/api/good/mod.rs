@@ -5,6 +5,8 @@ use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 use serde_json::json;
 use uuid::Uuid;
 
+// TODO! реализовать здесь, на этом месте функцию, возвращающую Router::new().route(...)... для функций по пути /api/good/{функция}
+
 pub(crate) async fn register(State(state): State<AppState>) -> Json<serde_json::Value> {
     // TODO! поменять возвращаемое значение
     let good = received_good::ActiveModel {
