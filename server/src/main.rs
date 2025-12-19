@@ -42,15 +42,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing::info!("Migrations applied successfully!");
 
     let state = AppState { db };
-
-    let api_routes = Router::new()
-        .route("/good/register", get(good::register))
-        .route("/bin/allocate", post(bin::allocate))
-        .route("/bin/good_arrived", post(bin::good_arrived));
-
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))
-        .nest("/api", api_routes)
+        .nest("/api", api::routes())
         .with_state(state);
 
     // TODO! сообщение о начале прослушивания на порте

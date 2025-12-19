@@ -1,5 +1,7 @@
 use crate::AppState;
+use axum::Router;
 use axum::extract::{Json, State};
+use axum::routing::post;
 use entity::{bin, received_good};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DbErr, EntityTrait, ModelTrait, QueryFilter, QuerySelect, Set,
@@ -7,9 +9,14 @@ use sea_orm::{
 };
 use serde_json::json;
 use uuid::Uuid;
-// TODO! реализовать здесь, на этом месте функцию, возвращающую Router::new().route(...)... для функций по пути /api/bin/{функция}
 
-pub(crate) async fn allocate(
+pub(crate) fn routes() -> Router<AppState> {
+    Router::new()
+        .route("/allocate", post(allocate))
+        .route("/good_arrived", post(good_arrived))
+}
+
+async fn allocate(
     State(state): State<AppState>,
     Json(payload): Json<serde_json::Value>,
 ) -> Json<serde_json::Value> {
@@ -70,7 +77,7 @@ pub(crate) async fn allocate(
     }))
 }
 
-pub(crate) async fn good_arrived(
+async fn good_arrived(
     State(state): State<AppState>,
     Json(payload): Json<serde_json::Value>,
 ) -> Json<serde_json::Value> {
@@ -101,3 +108,5 @@ pub(crate) async fn good_arrived(
         "good_id": bin.good
     }))
 }
+
+// TODO! реализовать убывание груза
