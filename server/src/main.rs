@@ -44,8 +44,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = AppState { db };
 
     let api_routes = Router::new()
-        .route("/good/register", post(good::register))
-        .route("/bin/allocate", post(bin::allocate));
+        .route("/good/register", get(good::register))
+        .route("/bin/allocate", post(bin::allocate))
+        .route("/bin/good_arrived", post(bin::good_arrived));
 
     let app = Router::new()
         .route("/", get(|| async { "Hello, World!" }))

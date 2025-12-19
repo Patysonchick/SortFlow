@@ -1,7 +1,7 @@
 use crate::AppState;
 use axum::extract::{Json, State};
 use entity::received_good;
-use sea_orm::{ActiveModelTrait, EntityTrait, Set};
+use sea_orm::{ActiveModelTrait, Set};
 use serde_json::json;
 use uuid::Uuid;
 
@@ -16,6 +16,7 @@ pub(crate) async fn register(State(state): State<AppState>) -> Json<serde_json::
 
     let good = good.insert(&state.db).await.unwrap(); // TODO! сделать обработку ошибок
 
+    tracing::info!("Registered good, id: {}", good.id);
     Json(json!({
         "good_id": good.id,
     }))
