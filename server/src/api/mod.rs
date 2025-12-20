@@ -33,6 +33,12 @@ pub(crate) enum Error {
 
     #[error("No free bins available")]
     FreeBinNotFound,
+
+    #[error("Failed generate QR code")]
+    QrCodeGenerating,
+
+    #[error("Failed generate image")]
+    ImageGenerating,
 }
 
 impl IntoResponse for Error {
@@ -49,6 +55,11 @@ impl IntoResponse for Error {
             Error::EmptyUUID => (StatusCode::BAD_REQUEST, "UUID not provided"),
             Error::UUIDParse(_) => (StatusCode::BAD_REQUEST, "UUID parse error"), // возможно надо поменять с bad request на internal error
             Error::FreeBinNotFound => (StatusCode::GONE, "No free bins available"), // возможно надо поменять gone на что-то другое
+            Error::QrCodeGenerating => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "QR code generating error",
+            ),
+            Error::ImageGenerating => (StatusCode::INTERNAL_SERVER_ERROR, "Image generating error"),
         };
 
         (status, message).into_response()

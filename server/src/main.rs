@@ -27,6 +27,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init();
     tracing::info!("Starting server...");
 
+    // TODO! сделать подключение не по ссылке, а по отдельным данным для входа
+    // TODO! изменить структуру .env файла
     let url = match env::var("DATABASE_URL") {
         Ok(url) => url,
         Err(e) => {
