@@ -4,8 +4,8 @@ use axum::extract::{Json, State};
 use axum::routing::post;
 use entity::{bin, received_good};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter, QuerySelect, Set,
-    TransactionError, TransactionTrait,
+    ActiveModelTrait, ColumnTrait, EntityTrait, ModelTrait, QueryFilter, QueryOrder, QuerySelect,
+    Set, TransactionError, TransactionTrait,
 };
 use serde_json::json;
 use uuid::Uuid;
@@ -13,7 +13,7 @@ use uuid::Uuid;
 pub(crate) fn routes() -> Router<AppState> {
     Router::new()
         .route("/allocate", post(allocate))
-        .route("/good_arrived", post(good_arrived))
+        .route("/arrived", post(arrived))
 }
 
 async fn allocate(
@@ -21,10 +21,8 @@ async fn allocate(
     Json(payload): Json<serde_json::Value>,
 ) -> Result<Json<serde_json::Value>, api::Error> {
     // Проверка на наличие такого UUID
-    let good_id = payload["good_id"]
-        .as_str()
-        .ok_or_else(|| api::Error::EmptyUUID)?;
-    let good_uuid = Uuid::parse_str(good_id).map_err(api::Error::UUIDParse)?;
+    let good_id = payload["good_id"].as_str().ok_or(api::Error::EmptyUUID)?;
+    let good_uuid = Uuid::parse_str(good_id)?;
 
     let res = state
         .db
@@ -32,41 +30,33 @@ async fn allocate(
             Box::pin(async move {
                 let received_good = received_good::Entity::find_by_id(good_uuid)
                     .one(txn)
-                    .await
-                    .map_err(api::Error::Database)?;
-                let received_good = match received_good {
-                    Some(received_good) => received_good,
-                    None => return Err(api::Error::GoodNotFound(good_uuid)),
-                };
+                    .await?
+                    .ok_or(api::Error::GoodNotFound(good_uuid))?;
 
                 let free_bin = bin::Entity::find()
                     .filter(bin::Column::Good.is_null())
+                    .order_by_asc(bin::Column::Id)
+                    // .order_by_asc(bin::Column::Rack) // возможно можно добавить сортировку по стеллажу
                     .lock_exclusive()
                     .one(txn)
-                    .await
-                    .map_err(api::Error::Database)?
-                    .ok_or_else(|| api::Error::FreeBinNotFound)?;
+                    .await?
+                    .ok_or(api::Error::FreeBinNotFound)?;
+                // TODO! сделать сортировку между стеллажами по степени нагруженности манипулятора
+                // наверное надо будет распределять по алгоритму Round Robin(каждому по очереди: 1, 2, 3,  1, 2, ...)
 
                 let mut bin_active: bin::ActiveModel = free_bin.into();
                 bin_active.good = Set(Some(good_uuid));
                 bin_active.status = Set(1);
 
-                let bin = bin_active.update(txn).await.map_err(api::Error::Database)?;
+                let bin = bin_active.update(txn).await?;
 
-                let delete_res = received_good
-                    .delete(txn)
-                    .await
-                    .map_err(api::Error::Database)?;
+                let delete_res = received_good.delete(txn).await?;
                 tracing::info!(
                     "Deleting received_good, row affected: {}",
                     delete_res.rows_affected
                 );
 
-                Ok((
-                    bin.id,
-                    bin.rack,
-                    bin.good.ok_or_else(|| api::Error::EmptyUUID)?,
-                ))
+                Ok((bin.id, bin.rack, good_uuid))
             })
         })
         .await
@@ -87,41 +77,33 @@ async fn allocate(
     })))
 }
 
-async fn good_arrived(
+async fn arrived(
     State(state): State<AppState>,
     Json(payload): Json<serde_json::Value>,
 ) -> Result<Json<serde_json::Value>, api::Error> {
-    let good_id = payload["good_id"]
-        .as_str()
-        .ok_or_else(|| api::Error::EmptyUUID)?;
-    let good_uuid = Uuid::parse_str(good_id).map_err(api::Error::UUIDParse)?;
+    let good_id = payload["good_id"].as_str().ok_or(api::Error::EmptyUUID)?;
+    let good_uuid = Uuid::parse_str(good_id)?;
 
     let bin = bin::Entity::find()
         .filter(bin::Column::Good.eq(good_uuid))
         .filter(bin::Column::Status.eq(1)) // TODO! по-хорошему сделать поверку на целостность памяти, т.к. status не может быть не равен 1
         .one(&state.db) // возможно и несколько результатов, TODO! позже сделать проверку на целостность памяти
-        .await
-        .map_err(api::Error::Database)?;
-    let bin = match bin {
-        Some(bin) => bin,
-        None => return Err(api::Error::GoodNotFound(good_uuid)),
-    };
+        .await?
+        .ok_or(api::Error::GoodNotFound(good_uuid))?;
 
     let mut bin_active: bin::ActiveModel = bin.into();
     bin_active.status = Set(2);
 
-    let bin = bin_active
-        .update(&state.db)
-        .await
-        .map_err(api::Error::Database)?;
+    let bin = bin_active.update(&state.db).await?;
+
     tracing::info!(
         "Status changed to {} for good {}",
         bin.status,
-        bin.good.ok_or_else(|| api::Error::EmptyUUID)?
+        bin.good.ok_or(api::Error::EmptyUUID)?
     );
     // TODO! возможно поменять возвращаемый JSON
     Ok(Json(json!({
-        "good_id": bin.good.ok_or_else(|| api::Error::EmptyUUID)?
+        "good_id": bin.good.ok_or(api::Error::EmptyUUID)?
     })))
 }
 

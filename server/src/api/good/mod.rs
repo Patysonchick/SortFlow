@@ -1,7 +1,7 @@
 use crate::{AppState, api};
 use axum::Router;
 use axum::extract::{Json, Path, State};
-use axum::http::{HeaderMap, header};
+use axum::http::{HeaderMap, HeaderValue, header};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use entity::received_good;
@@ -24,7 +24,7 @@ async fn register(State(state): State<AppState>) -> Result<Json<serde_json::Valu
         ..Default::default()
     };
 
-    let good = good.insert(&state.db).await.map_err(api::Error::Database)?;
+    let good = good.insert(&state.db).await?;
 
     tracing::info!("Registered good, id: {}", good.id);
     Ok(Json(json!({
@@ -50,7 +50,7 @@ async fn qrcode(
     // TODO! добавить ещё данные на изображение: название сервиса(placeholder - SortFlow), UUID и другие доп данные
 
     let mut headers = HeaderMap::new();
-    headers.insert(header::CONTENT_TYPE, "image/png".parse().unwrap());
+    headers.insert(header::CONTENT_TYPE, HeaderValue::from_static("image/png"));
 
     Ok((headers, bytes))
 }

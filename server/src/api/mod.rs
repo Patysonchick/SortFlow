@@ -19,9 +19,6 @@ pub(crate) enum Error {
     #[error("Database error: {0}")]
     Database(#[from] sea_orm::error::DbErr),
 
-    #[error("Database transaction error: {0}")]
-    DatabaseTransaction(String), // (sea_orm::TransactionError<Error>)
-
     #[error("Good with UUID {0} not found")]
     GoodNotFound(Uuid),
 
@@ -47,10 +44,6 @@ impl IntoResponse for Error {
 
         let (status, message) = match self {
             Error::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal database error"),
-            Error::DatabaseTransaction(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Database transaction error",
-            ),
             Error::GoodNotFound(_) => (StatusCode::NOT_FOUND, "Good with UUID not found"),
             Error::EmptyUUID => (StatusCode::BAD_REQUEST, "UUID not provided"),
             Error::UUIDParse(_) => (StatusCode::BAD_REQUEST, "UUID parse error"), // возможно надо поменять с bad request на internal error

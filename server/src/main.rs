@@ -1,8 +1,7 @@
 pub(crate) mod api;
 
-use crate::api::{bin, good};
 use axum::Router;
-use axum::routing::{get, post};
+use axum::routing::get;
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{Database, DatabaseConnection};
 use std::env;
