@@ -14,6 +14,8 @@ pub(crate) fn routes() -> Router<AppState> {
     Router::new()
         .route("/allocate", post(allocate))
         .route("/arrived", post(arrived))
+        .route("/pick", post(pick))
+        .route("/departed", post(departed))
 }
 
 async fn allocate(
@@ -107,4 +109,57 @@ async fn arrived(
     })))
 }
 
-// TODO! реализовать убывание груза
+async fn pick(
+    State(state): State<AppState>,
+    Json(payload): Json<serde_json::Value>,
+) -> Result<Json<serde_json::Value>, api::Error> {
+    let good_id = payload["good_id"].as_str().ok_or(api::Error::EmptyUUID)?;
+    let good_uuid = Uuid::parse_str(good_id)?;
+
+    let bin = bin::Entity::find()
+        .filter(bin::Column::Good.eq(good_uuid))
+        .filter(bin::Column::Status.eq(2))
+        .one(&state.db)
+        .await?
+        .ok_or(api::Error::GoodNotFound(good_uuid))?;
+
+    let mut bin_active: bin::ActiveModel = bin.into();
+    bin_active.status = Set(3);
+
+    let bin = bin_active.update(&state.db).await?;
+
+    tracing::info!(
+        "Status changed to {} for good {}",
+        bin.status,
+        bin.good.ok_or(api::Error::EmptyUUID)?
+    );
+    Ok(Json(json!({
+        "good_id": bin.good.ok_or(api::Error::EmptyUUID)?
+    })))
+}
+
+async fn departed(
+    State(state): State<AppState>,
+    Json(payload): Json<serde_json::Value>,
+) -> Result<Json<serde_json::Value>, api::Error> {
+    let good_id = payload["good_id"].as_str().ok_or(api::Error::EmptyUUID)?;
+    let good_uuid = Uuid::parse_str(good_id)?;
+
+    let bin = bin::Entity::find()
+        .filter(bin::Column::Good.eq(good_uuid))
+        .filter(bin::Column::Status.eq(3))
+        .one(&state.db)
+        .await?
+        .ok_or(api::Error::GoodNotFound(good_uuid))?;
+
+    let mut bin_active: bin::ActiveModel = bin.into();
+    bin_active.good = Set(None);
+    bin_active.status = Set(0);
+
+    let bin = bin_active.update(&state.db).await?;
+
+    tracing::info!("Deleting good {} from bin {}", good_uuid, bin.id);
+    Ok(Json(json!({
+        "good_id": good_uuid
+    })))
+}
