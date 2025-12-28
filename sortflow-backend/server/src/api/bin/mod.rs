@@ -37,6 +37,7 @@ async fn allocate(
 
                 let free_bin = bin::Entity::find()
                     .filter(bin::Column::Good.is_null())
+                    .filter(bin::Column::Status.eq(0))
                     .order_by_asc(bin::Column::Id)
                     // .order_by_asc(bin::Column::Rack) // возможно можно добавить сортировку по стеллажу
                     .lock_exclusive()
