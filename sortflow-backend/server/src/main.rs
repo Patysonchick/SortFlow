@@ -28,6 +28,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // TODO! сделать подключение не по ссылке, а по отдельным данным для входа
     // TODO! изменить структуру .env файла
+    let listen = env::var("LISTEN").unwrap_or_else(|_| "0.0.0.0".to_string());
+    let port = match env::var("PORT") {
+        Ok(port) => port
+            .parse::<u16>()
+            .inspect_err(|_| tracing::error!("PORT is not a number"))?,
+        Err(_) => 3000,
+    };
     let url = match env::var("DATABASE_URL") {
         Ok(url) => url,
         Err(e) => {
@@ -35,6 +42,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             return Err(e.into());
         }
     };
+
+    tracing::info!("Establishing database connection...");
     let db = Database::connect(url).await?;
     tracing::info!("Database connection established");
 
@@ -48,8 +57,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest("/api", api::routes())
         .with_state(state);
 
-    // TODO! сообщение о начале прослушивания на порте
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    tracing::info!("Listening on {listen}:{port}");
+    let listener = tokio::net::TcpListener::bind((listen, port)).await?;
     axum::serve(listener, app).await?;
 
     tracing::info!("Server stopped!");
