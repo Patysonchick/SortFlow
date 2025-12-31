@@ -28,22 +28,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // TODO! сделать подключение не по ссылке, а по отдельным данным для входа
     // TODO! изменить структуру .env файла
-    let listen = env::var("LISTEN").unwrap_or_else(|_| "0.0.0.0".to_string());
-    let port = match env::var("PORT") {
+    let listen = env::var("SERVER_LISTEN").unwrap_or_else(|_| "0.0.0.0".to_string());
+    let port = match env::var("SERVER_PORT") {
         Ok(port) => port
             .parse::<u16>()
             .inspect_err(|_| tracing::error!("PORT is not a number"))?,
         Err(_) => 3000,
     };
-    let url = match env::var("DATABASE_URL") {
-        Ok(url) => url,
-        Err(e) => {
-            tracing::error!("DATABASE_URL not found");
-            return Err(e.into());
-        }
-    };
+    let postgres_listen = env::var("POSTGRES_LISTEN")
+        .inspect_err(|_| tracing::error!("POSTGRES_LISTEN not stated"))?;
+    let postgres_port =
+        env::var("POSTGRES_PORT").inspect_err(|_| tracing::error!("POSTGRES_PORT not stated"))?;
+    let postgres_user =
+        env::var("POSTGRES_USER").inspect_err(|_| tracing::error!("POSTGRES_USER not stated"))?;
+    let postgres_password = env::var("POSTGRES_PASSWORD")
+        .inspect_err(|_| tracing::error!("POSTGRES_PASSWORD not stated"))?;
+    let postgres_db =
+        env::var("POSTGRES_DB").inspect_err(|_| tracing::error!("POSTGRES_DB not stated"))?;
 
     tracing::info!("Establishing database connection...");
+    let url = format!(
+        "postgres://{postgres_user}:{postgres_password}@{postgres_listen}:{postgres_port}/{postgres_db}"
+    );
     let db = Database::connect(url).await?;
     tracing::info!("Database connection established");
 
