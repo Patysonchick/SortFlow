@@ -26,8 +26,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .init();
     tracing::info!("Starting server...");
 
-    // TODO! сделать подключение не по ссылке, а по отдельным данным для входа
-    // TODO! изменить структуру .env файла
     let listen = env::var("SERVER_LISTEN").unwrap_or_else(|_| "0.0.0.0".to_string());
     let port = match env::var("SERVER_PORT") {
         Ok(port) => port
