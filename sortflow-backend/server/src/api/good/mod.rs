@@ -4,10 +4,12 @@ use axum::extract::{Json, Path, State};
 use axum::http::{HeaderMap, HeaderValue, header};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
-use entity::received_good;
+use entity::prelude::*;
+use entity::{bin, received_good};
 use image::Luma;
 use qrcode::QrCode;
-use sea_orm::{ActiveModelTrait, Set};
+use sea_orm::ColumnTrait;
+use sea_orm::{ActiveModelTrait, EntityTrait, QueryFilter, Set};
 use serde_json::json;
 use std::io::Cursor;
 use uuid::Uuid;
@@ -16,6 +18,7 @@ pub(crate) fn routes() -> Router<AppState> {
     Router::new()
         .route("/register", post(register))
         .route("/qrcode/{good_id}", get(qrcode))
+        .route("/find_in_bin/{good_id}", get(find_in_bin))
 }
 
 async fn register(State(state): State<AppState>) -> Result<Json<serde_json::Value>, api::Error> {
@@ -53,4 +56,21 @@ async fn qrcode(
     headers.insert(header::CONTENT_TYPE, HeaderValue::from_static("image/png"));
 
     Ok((headers, bytes))
+}
+
+async fn find_in_bin(
+    State(state): State<AppState>,
+    Path(good_id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, api::Error> {
+    let bin = Bin::find()
+        .filter(bin::Column::Good.eq(good_id))
+        .filter(bin::Column::Status.eq(2))
+        .one(&state.db)
+        .await?
+        .ok_or(api::Error::GoodNotFound(good_id))?;
+
+    Ok(Json(json!({
+        "id": bin.id,
+        "rack": bin.rack
+    })))
 }

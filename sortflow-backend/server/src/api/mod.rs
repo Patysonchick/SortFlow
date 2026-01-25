@@ -43,16 +43,25 @@ impl IntoResponse for Error {
         tracing::error!("API Error: {}", self);
 
         let (status, message) = match self {
-            Error::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal database error"),
-            Error::GoodNotFound(_) => (StatusCode::NOT_FOUND, "Good with UUID not found"),
-            Error::EmptyUUID => (StatusCode::BAD_REQUEST, "UUID not provided"),
-            Error::UUIDParse(_) => (StatusCode::BAD_REQUEST, "UUID parse error"), // возможно надо поменять с bad request на internal error
-            Error::FreeBinNotFound => (StatusCode::GONE, "No free bins available"), // возможно надо поменять gone на что-то другое
+            Error::Database(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal database error".to_string(),
+            ),
+            Error::GoodNotFound(uuid) => (
+                StatusCode::NOT_FOUND,
+                format!("Good with UUID {uuid} not found"),
+            ),
+            Error::EmptyUUID => (StatusCode::BAD_REQUEST, "UUID not provided".to_string()),
+            Error::UUIDParse(_) => (StatusCode::BAD_REQUEST, "UUID parse error".to_string()), // возможно надо поменять с bad request на internal error
+            Error::FreeBinNotFound => (StatusCode::GONE, "No free bins available".to_string()), // возможно надо поменять gone на что-то другое
             Error::QrCodeGenerating => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "QR code generating error",
+                "QR code generating error".to_string(),
             ),
-            Error::ImageGenerating => (StatusCode::INTERNAL_SERVER_ERROR, "Image generating error"),
+            Error::ImageGenerating => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Image generating error".to_string(),
+            ),
         };
 
         (status, message).into_response()
