@@ -1,13 +1,15 @@
-debug/
-target/
+.DS_Store
+Thumbs.db
+ehthumbs.db
+*~
 
-Cargo.lock
-**/*.rs.bk
-*.pdb
-
-*.env
-
-.idea
+.idea/
 *.iml
-out
-gen
+out/
+gen/
+
+.vscode/
+*.code-workspace
+
+.env
+*.env
