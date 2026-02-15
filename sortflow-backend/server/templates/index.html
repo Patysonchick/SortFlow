@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en_US">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Panel - SortFlow</title>
+
+    <!--    <link href="/static/style.css" rel="stylesheet">-->
+    <!--    <link href="/static/favicon.ico" rel="icon" type="image/x-icon">-->
+</head>
+<body>
+<header>
+    <h1></h1>
+    <nav>
+    </nav>
+</header>
+<main>
+    <h1>Bins</h1>
+
+    <h2>Rack №{{ rack_id }}</h2>
+    <table border="1">
+        <thead>
+        <tr>
+            <th>Bin ID</th>
+            <th>Good ID</th>
+            <th>Good status</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for bin in bins %}
+        <tr>
+            <td>{{ bin.id }}</td>
+            <td>{{ bin.good }}</td>
+            <td>{{ bin.status }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</main>
+<footer>
+</footer>
+</body>
+</html>⏎ 

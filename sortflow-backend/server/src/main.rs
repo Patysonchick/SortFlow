@@ -1,4 +1,5 @@
-pub(crate) mod api;
+mod api;
+mod panel;
 
 use axum::Router;
 use axum::routing::get;
@@ -57,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let state = AppState { db };
     let app = Router::new()
-        .route("/", get(|| async { "Hello, World!" }))
+        .route("/{rack_id}", get(panel::index))
         .nest("/api", api::routes())
         .with_state(state);
 

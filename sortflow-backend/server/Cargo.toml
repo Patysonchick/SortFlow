@@ -1,6 +1,6 @@
 [package]
 name = "server"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 
 [dependencies]
@@ -24,3 +24,4 @@ dotenvy = "0.15.7"
 thiserror = "2.0.17"
 image = "0.25.9"
 qrcode = "0.14.1"
+askama = "0.15.4"
