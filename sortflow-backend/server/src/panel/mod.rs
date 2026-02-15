@@ -15,7 +15,6 @@ struct IndexTemplate {
 
 struct BinTemplate {
     pub id: i32,
-    pub rack: i32,
     pub good: String,
     pub status: i32,
 }
@@ -32,7 +31,6 @@ pub(crate) async fn index(State(state): State<AppState>, Path(rack_id): Path<i32
         .iter()
         .map(|bin| BinTemplate {
             id: bin.id,
-            rack: bin.rack,
             good: bin.good.map(|g| g.to_string()).unwrap_or_default(),
             status: bin.status,
         })
