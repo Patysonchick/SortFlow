@@ -1,15 +1,9 @@
 #include <Arduino.h>
-#include "funcs.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-const uint8_t TOUCH_PIN = 4;
-
-// TODO!
-const char* WIFI_SSID = "OnePlus Ace 2 Pro";
-const char* WIFI_PASSWORD = "123456711";
-
-const char* serverAllocateUrl = "192.168.1.100:3000/api/bin/allocate";
+#include "config.h"
+#include "funcs.h"
 
 // Ядро 0 - работа с сетью
 // Ядро 1 - обработка датчиков
@@ -65,7 +59,7 @@ void loop() {
 
 void TaskHardware(void *pvParameters) {
   for(;;) {
-    touch_heartbeat(TOUCH_PIN);
+    touch_heartbeat(PIN_TOUCH);
 
     vTaskDelay(50 / portTICK_PERIOD_MS);
   }
