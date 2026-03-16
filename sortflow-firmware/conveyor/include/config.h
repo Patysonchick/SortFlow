@@ -22,11 +22,11 @@ constexpr uint8_t PIN_UART2_TX = 17;
 constexpr uint8_t PIN_UART2_RX = 16;
 
 // WiFi
-constexpr char* WIFI_SSID = "OnePlus Ace 2 Pro";
-constexpr char* WIFI_PASSWORD = "123456711";
+constexpr const char* WIFI_SSID = "OnePlus Ace 2 Pro";
+constexpr const char* WIFI_PASSWORD = "123456711";
 
 // Backend
-constexpr char* URL_SERVER_ALLOCATE = "http://192.168.1.100:3000/api/bin/allocate";
+constexpr const char* URL_SERVER_ALLOCATE = "http://192.168.1.100:3000/api/bin/allocate";
 // TODO!
 
 // Miscellaneous

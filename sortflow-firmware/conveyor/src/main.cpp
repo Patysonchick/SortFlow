@@ -18,7 +18,7 @@ void TaskHardware(void *pvParameters);
 void TaskAllocate(void *pvParameters);
 
 void setup() {
-  Serial.begin(115220);
+  Serial.begin(115200);
   Serial2.begin(115200); // ESP32-CAM UART2
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
@@ -109,7 +109,7 @@ void TaskHardware(void *pvParameters) {
   conveyor_forward();
 
   for(;;) {
-    if(digitalRead(PIN_SENSOR_1)) {
+    if(!digitalRead(PIN_SENSOR_1)) {
       conveyor_stop();
       Serial.println(F("Good detected, stopping conveyor"));
 
@@ -127,5 +127,25 @@ void TaskHardware(void *pvParameters) {
 }
 
 void TaskAllocate(void *pvParameters) {
+  // TODO!
+
+  for(;;) {
+    if (xSemaphoreTake(isAllocated, portMAX_DELAY) == pdTRUE) {
+      
+      Serial.println(F("Sending QR-code request"));
+
+      String uuid = getUuid();
+
+      if (uuid.length() > 0) {
+        // TODO! POST request for allocate
+        Serial.println(F("Pseudo request to API"));
+      } else {
+        Serial.println(F("QR-code"));
+      }
+
+      xSemaphoreGive(canMove);
+    }
+  }
+
   // TODO!
 }
