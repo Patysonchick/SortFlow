@@ -4,17 +4,22 @@
 
 #include "config.h"
 #include "funcs.h"
+#include "conveyor.h"
+#include "uart.h"
 
 // Ядро 0 - работа с сетью
 // Ядро 1 - обработка датчиков
-SemaphoreHandle_t stateSemaphore;
 
+SemaphoreHandle_t canMove;
+SemaphoreHandle_t isAllocated;
+
+void TaskHeartbeat(void *pvParameters);
 void TaskHardware(void *pvParameters);
-// void TaskNetwork(void *pvParameters);
+void TaskAllocate(void *pvParameters);
 
 void setup() {
   Serial.begin(115220);
-  Serial2.begin(115200, SERIAL_8N1, PIN_UART2_RX, PIN_UART2_TX); // ESP32-CAM UART2
+  Serial2.begin(115200); // ESP32-CAM UART2
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   // L298N
@@ -51,7 +56,18 @@ void setup() {
   Serial.println(F("Connected to WiFi!"));
   blink_n(LED_BUILTIN, 3, 250); // WiFi inited signal
 
-  stateSemaphore = xSemaphoreCreateBinary();
+  canMove = xSemaphoreCreateBinary();
+  isAllocated = xSemaphoreCreateBinary();
+
+  xTaskCreatePinnedToCore(
+    TaskHeartbeat,
+    "HeatbeatTask",
+    1024,
+    NULL,
+    2,
+    NULL,
+    1
+  );
 
   xTaskCreatePinnedToCore(
     TaskHardware,
@@ -63,15 +79,15 @@ void setup() {
     1
   );
 
-  // xTaskCreatePinnedToCore(
-  //   TaskNetwork,
-  //   "NetworkTask",
-  //   8192,
-  //   NULL,
-  //   1,
-  //   NULL,
-  //   0
-  // );
+  xTaskCreatePinnedToCore(
+    TaskAllocate,
+    "AllocateTask",
+    8192,
+    NULL,
+    1,
+    NULL,
+    0
+  );
 
   Serial.println(F("Init complete!"));
   blink_n(LED_BUILTIN, 4, 250);
@@ -81,7 +97,7 @@ void loop() {
   vTaskDelay(1000 / portTICK_PERIOD_MS); 
 }
 
-void TaskHardware(void *pvParameters) {
+void TaskHeartbeat(void *pvParameters) {
   for(;;) {
     touch_heartbeat(PIN_TOUCH);
 
@@ -89,6 +105,27 @@ void TaskHardware(void *pvParameters) {
   }
 }
 
-// void TaskNetwork(void *pvParameters) {
-//   // TODO!
-// }
+void TaskHardware(void *pvParameters) {
+  conveyor_forward();
+
+  for(;;) {
+    if(digitalRead(PIN_SENSOR_1)) {
+      conveyor_stop();
+      Serial.println(F("Good detected, stopping conveyor"));
+
+      xSemaphoreGive(isAllocated);
+      xSemaphoreTake(canMove, portMAX_DELAY);
+
+      Serial.println(F("Starting conveyor"));
+      conveyor_start();
+
+      vTaskDelay(1000 / portTICK_PERIOD_MS); 
+    }
+
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+  }
+}
+
+void TaskAllocate(void *pvParameters) {
+  // TODO!
+}
