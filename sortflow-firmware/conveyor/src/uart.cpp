@@ -1,5 +1,4 @@
 #include "uart.h"
-// #include "config.h"
 
 void requestUuid() {
     Serial2.println("!uuid");
