@@ -11,11 +11,13 @@ constexpr uint8_t PIN_MOTOR_IN2 = 32;
 constexpr uint8_t PIN_SERVO_1 = 13;
 constexpr uint8_t PIN_SERVO_2 = 14;
 constexpr uint8_t PIN_SERVO_3 = 27;
+constexpr uint8_t PIN_SERVO_4 = 33;
 
 // KY-032
 // 34, 35 - ONLY INPUT!!!
-constexpr uint8_t PIN_SENSOR_1 = 34;
-constexpr uint8_t PIN_SENSOR_2 = 35;
+constexpr uint8_t PIN_SENSOR_1 = 35; // ПОМЕНЯТЬ местами(различие схемы и реальности)
+constexpr uint8_t PIN_SENSOR_2 = 34;
+constexpr uint8_t IR_THRESHOLD = 15;
 
 // ESP32-CAM UART2
 constexpr uint8_t PIN_UART2_TX = 17;

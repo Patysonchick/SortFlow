@@ -1,11 +1,13 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <ESP32Servo.h>
 
 #include "config.h"
 #include "funcs.h"
 #include "conveyor.h"
 #include "uart.h"
+#include "servo.h"
 
 // Ядро 0 - работа с сетью
 // Ядро 1 - обработка датчиков
@@ -17,6 +19,8 @@ void TaskHeartbeat(void *pvParameters);
 void TaskHardware(void *pvParameters);
 void TaskAllocate(void *pvParameters);
 
+Servo partition;
+
 void setup() {
   Serial.begin(115200);
   Serial2.begin(115200); // ESP32-CAM UART2
@@ -27,10 +31,16 @@ void setup() {
   pinMode(PIN_MOTOR_IN1, OUTPUT);
   pinMode(PIN_MOTOR_IN2, OUTPUT);
 
+  conveyor_forward();
+  conveyor_stop();
+
   // SG90
-  pinMode(PIN_SERVO_1, OUTPUT);
-  pinMode(PIN_SERVO_2, OUTPUT);
-  pinMode(PIN_SERVO_3, OUTPUT);
+  // pinMode(PIN_SERVO_1, OUTPUT);
+  // pinMode(PIN_SERVO_2, OUTPUT);
+  // pinMode(PIN_SERVO_3, OUTPUT);
+
+  partition.attach(PIN_SERVO_4); 
+  return_partition(partition);
 
   // KY-032
   // 34, 35 - ONLY INPUT!!!
@@ -108,18 +118,32 @@ void TaskHeartbeat(void *pvParameters) {
 void TaskHardware(void *pvParameters) {
   conveyor_forward();
 
+  uint8_t detectCount=0;
   for(;;) {
     if(!digitalRead(PIN_SENSOR_1)) {
+      detectCount++;
+    } else {
+      detectCount=0;
+    }
+
+    if(detectCount >= IR_THRESHOLD) {
       conveyor_stop();
+      turn_partition(partition); // TODO!
+      vTaskDelay(500 / portTICK_PERIOD_MS);
       Serial.println(F("Good detected, stopping conveyor"));
 
       xSemaphoreGive(isAllocated);
       xSemaphoreTake(canMove, portMAX_DELAY);
 
       Serial.println(F("Starting conveyor"));
+      // partition.write(90);
+      return_partition(partition); // TODO!
+      vTaskDelay(500 / portTICK_PERIOD_MS);
       conveyor_start();
 
       vTaskDelay(1000 / portTICK_PERIOD_MS); 
+
+      detectCount = 0;
     }
 
     vTaskDelay(10 / portTICK_PERIOD_MS);
